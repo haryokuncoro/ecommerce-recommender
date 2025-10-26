@@ -13,10 +13,13 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 @Service
@@ -27,10 +30,21 @@ public class RecommendationService {
     private final ProductRepository productRepository;
     private final TransactionRepository transactionRepository;
     private final ObjectMapper objectMapper;
+    private final RedisTemplate<String, String> redisTemplate;
+
+    private static final long CACHE_TTL_MINUTES = 60;
 
     @Transactional(readOnly = true)
     public List<ProductDTO> recommendProducts(Long userId, int topN) {
         try {
+            ValueOperations<String, String> ops = redisTemplate.opsForValue();
+            String cacheKey = "recommendations:" + userId;
+            //Check cache
+            String cached = ops.get(cacheKey);
+            if (cached != null) {
+                return objectMapper.readValue(cached, new TypeReference<>() {});
+            }
+
             // Get latest 5 transactions
             List<Transaction> userTx = transactionRepository
                     .findTop5ByUser_IdOrderByCreatedAtDesc(userId);
@@ -74,12 +88,15 @@ public class RecommendationService {
                 pageNumber++;
             } while(!page.isLast());
 
-            return scores.entrySet().stream()
+            List<ProductDTO> result = scores.entrySet().stream()
                     .sorted(Map.Entry.<Product, Double>comparingByValue().reversed())
                     .limit(topN)
                     .map(entry -> toDTO(entry.getKey()))
                     .collect(Collectors.toList());
 
+            // Save to cache
+            ops.set(cacheKey, objectMapper.writeValueAsString(result), CACHE_TTL_MINUTES, TimeUnit.MINUTES);
+            return result;
         } catch (Exception e) {
             log.error("Failed to recommend products for userId={}", userId, e);
         }

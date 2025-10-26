@@ -103,47 +103,48 @@ public class RecommendationService {
 
     public String generateDummyProducts() throws Exception {
 
-        // 1️⃣ Define raw product data
-        List<Map<String, Object>> rawProducts = List.of(
-                Map.of("name", "Headphone X", "category", "Elektronik", "brand", "Sony", "price", 15000, "sold", 500, "color", "Hitam", "aroma", null),
-                Map.of("name", "Headphone Y", "category", "Elektronik", "brand", "Xiaomi", "price", 12000, "sold", 1000, "color", "Putih", "aroma", null),
-                Map.of("name", "Sneakers A", "category", "Fashion", "brand", "Nike", "price", 8000, "sold", 200, "color", "Merah", "aroma", null),
-                Map.of("name", "Sneakers B", "category", "Fashion", "brand", "Adidas", "price", 9000, "sold", 300, "color", "Hitam", "aroma", null),
-                Map.of("name", "Perfume A", "category", "Beauty", "brand", "Dior", "price", 200000, "sold", 50, "color", null, "aroma", "Floral"),
-                Map.of("name", "Perfume B", "category", "Beauty", "brand", "Chanel", "price", 180000, "sold", 70, "color", null, "aroma", "Citrus"),
-                Map.of("name", "Laptop A", "category", "Elektronik", "brand", "Dell", "price", 100000, "sold", 150, "color", null, "aroma", null),
-                Map.of("name", "Laptop B", "category", "Elektronik", "brand", "Asus", "price", 90000, "sold", 200, "color", null, "aroma", null),
-                Map.of("name", "T-Shirt A", "category", "Fashion", "brand", "Uniqlo", "price", 150000, "sold", 400, "color", "Biru", "aroma", null),
-                Map.of("name", "T-Shirt B", "category", "Fashion", "brand", "H&M", "price", 120000, "sold", 300, "color", "Hitam", "aroma", null)
-        );
+        List<Map<String, Object>> rawProducts = new ArrayList<>();
 
-        // 2️⃣ Category & brand mappings
-        Map<String, Integer> categoryMap = Map.of("Elektronik", 1, "Fashion", 2, "Beauty", 3);
-        Map<String, Double> brandScore = Map.of(
-                "Sony", 0.8, "Xiaomi", 0.7, "Nike", 0.9, "Adidas", 0.85,
-                "Dior", 0.95, "Chanel", 0.9, "Dell", 0.85, "Asus", 0.8,
-                "Uniqlo", 0.75, "H&M", 0.7
+        // Gunakan empty string untuk null
+        rawProducts.add(Map.of("name","Headphone X","category","Elektronik","brand","Sony","price",15000,"sold",500,"color","Hitam","aroma",""));
+        rawProducts.add(Map.of("name","Headphone Y","category","Elektronik","brand","Xiaomi","price",12000,"sold",1000,"color","Putih","aroma",""));
+        rawProducts.add(Map.of("name","Sneakers A","category","Fashion","brand","Nike","price",8000,"sold",200,"color","Merah","aroma",""));
+        rawProducts.add(Map.of("name","Sneakers B","category","Fashion","brand","Adidas","price",9000,"sold",300,"color","Hitam","aroma",""));
+        rawProducts.add(Map.of("name","Perfume A","category","Beauty","brand","Dior","price",200000,"sold",50,"color","","aroma","Floral"));
+        rawProducts.add(Map.of("name","Perfume B","category","Beauty","brand","Chanel","price",180000,"sold",70,"color","","aroma","Citrus"));
+        rawProducts.add(Map.of("name","Laptop A","category","Elektronik","brand","Dell","price",100000,"sold",150,"color","","aroma",""));
+        rawProducts.add(Map.of("name","Laptop B","category","Elektronik","brand","Asus","price",90000,"sold",200,"color","","aroma",""));
+        rawProducts.add(Map.of("name","T-Shirt A","category","Fashion","brand","Uniqlo","price",150000,"sold",400,"color","Biru","aroma",""));
+        rawProducts.add(Map.of("name","T-Shirt B","category","Fashion","brand","H&M","price",120000,"sold",300,"color","Hitam","aroma",""));
+
+        // Category & Brand map
+        Map<String,Integer> categoryMap = Map.of("Elektronik",1,"Fashion",2,"Beauty",3);
+        Map<String,Double> brandScore = Map.of(
+                "Sony",0.8,"Xiaomi",0.7,"Nike",0.9,"Adidas",0.85,
+                "Dior",0.95,"Chanel",0.9,"Dell",0.85,"Asus",0.8,
+                "Uniqlo",0.75,"H&M",0.7
         );
 
         double maxPrice = rawProducts.stream().mapToDouble(p -> (int)p.get("price")).max().orElse(1);
-        double maxSold = rawProducts.stream().mapToDouble(p -> (int)p.get("sold")).max().orElse(1);
+        double maxSold  = rawProducts.stream().mapToDouble(p -> (int)p.get("sold")).max().orElse(1);
 
-        Map<String, List<Double>> colorMap = Map.of(
+        // One-hot map
+        Map<String,List<Double>> colorMap = Map.of(
                 "Hitam", List.of(1.0,0.0,0.0,0.0),
                 "Putih", List.of(0.0,1.0,0.0,0.0),
                 "Merah", List.of(0.0,0.0,1.0,0.0),
                 "Biru",  List.of(0.0,0.0,0.0,1.0),
-                null,    List.of(0.0,0.0,0.0,0.0)
+                "",      List.of(0.0,0.0,0.0,0.0)
         );
-        Map<String, List<Double>> aromaMap = Map.of(
+        Map<String,List<Double>> aromaMap = Map.of(
                 "Floral", List.of(1.0,0.0),
                 "Citrus", List.of(0.0,1.0),
-                null,    List.of(0.0,0.0)
+                "",      List.of(0.0,0.0)
         );
 
-        // 3️⃣ Generate Product entities
+        // Generate Product entities
         List<Product> products = new ArrayList<>();
-        for (Map<String, Object> p : rawProducts) {
+        for (Map<String,Object> p : rawProducts) {
             Product product = new Product();
             product.setName((String)p.get("name"));
             product.setCategory((String)p.get("category"));
@@ -156,18 +157,18 @@ public class RecommendationService {
             double brandScoreVal = brandScore.get(p.get("brand"));
 
             List<Double> features = new ArrayList<>();
-            features.add(priceNorm);
-            features.add(brandScoreVal);
-            features.add(popularity);
-            features.add((double)categoryEncode);
-            features.addAll(colorMap.get(p.get("color")));
-            features.addAll(aromaMap.get(p.get("aroma")));
+            features.add(priceNorm);           // numeric
+            features.add(brandScoreVal);       // numeric
+            features.add(popularity);          // numeric
+            features.add((double)categoryEncode); // numeric
+            features.addAll(colorMap.get(p.get("color")));  // categorical
+            features.addAll(aromaMap.get(p.get("aroma")));  // categorical
 
             product.setFeatures(objectMapper.writeValueAsString(features));
             products.add(product);
         }
 
         productRepository.saveAll(products);
-        return "Dummy products generated and saved successfully!";
+        return "Dummy products generated with fixed-length feature vectors!";
     }
 }

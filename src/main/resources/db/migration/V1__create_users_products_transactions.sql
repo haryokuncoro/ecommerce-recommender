@@ -6,12 +6,14 @@ CREATE TABLE users (
 );
 
 CREATE TABLE products (
-    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     name VARCHAR(100),
-    category VARCHAR(50),
-    price DECIMAL(10,2),
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    category VARCHAR(100),
+    price DOUBLE,
+    features TEXT
 );
+
 
 CREATE TABLE transactions (
     id BIGINT PRIMARY KEY AUTO_INCREMENT,

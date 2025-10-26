@@ -1,4 +1,4 @@
-INSERT INTO product (name, category, brand, price, features, created_at) VALUES
+INSERT INTO products (name, category, brand, price, features, created_at) VALUES
 ('Headphone X', 'Elektronik', 'Sony', 15000, '[0.075,0.8,0.5,1,1,0,0,0,0,0]', NOW()),
 ('Headphone Y', 'Elektronik', 'Xiaomi', 12000, '[0.06,0.7,1.0,1,0,1,0,0,0,0]', NOW()),
 ('Sneakers A', 'Fashion', 'Nike', 8000, '[0.04,0.9,0.2,2,0,0,1,0,0,0]', NOW()),

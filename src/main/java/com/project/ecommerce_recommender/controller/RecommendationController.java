@@ -20,4 +20,9 @@ public class RecommendationController {
                                       @RequestParam(defaultValue = "5") int topN) {
         return recommendationService.recommendProducts(userId, topN);
     }
+
+    @GetMapping("/migrate/product")
+    public String migrateProduct() throws Exception {
+       return recommendationService.generateDummyProducts();
+    }
 }

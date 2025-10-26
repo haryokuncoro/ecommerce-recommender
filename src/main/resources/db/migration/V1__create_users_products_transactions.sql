@@ -9,6 +9,7 @@ CREATE TABLE products (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     name VARCHAR(100),
+    brand VARCHAR(100),
     category VARCHAR(100),
     price DOUBLE,
     features TEXT

@@ -6,6 +6,6 @@ import java.util.List;
 
 @Repository
 public interface TransactionRepository extends JpaRepository<Transaction, Long> {
-    List<Transaction> findTop5ByUserIdOrderByCreatedAtDesc(Long userId);
+    List<Transaction> findTop5ByUser_IdOrderByCreatedAtDesc(Long userId);
     long countByProductId(Long productId);
 }

@@ -9,6 +9,10 @@ import com.project.ecommerce_recommender.repository.ProductRepository;
 import com.project.ecommerce_recommender.repository.TransactionRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -32,7 +36,8 @@ public class RecommendationService {
                     .findTop5ByUser_IdOrderByCreatedAtDesc(userId);
 
             if (userTx.isEmpty()) {
-                return productRepository.findAll()
+                Pageable pageable = PageRequest.of(0, topN, Sort.by(Sort.Direction.DESC, "sold"));
+                return productRepository.findAll(pageable).getContent()
                         .stream()
                         .map(this::toDTO)
                         .collect(Collectors.toList());
@@ -46,18 +51,28 @@ public class RecommendationService {
             );
 
             long totalTx = transactionRepository.count();
-
             Map<Product, Double> scores = new HashMap<>();
-            for (Product p : productRepository.findAll()) {
-                if (p.getId().equals(lastProduct.getId())) continue;
 
-                List<Double> f = objectMapper.readValue(p.getFeatures(), new TypeReference<List<Double>>() {});
-                double sim = cosineSimilarity(lastFeatures, f);
-                double popularity = totalTx == 0 ? 0 :
-                        transactionRepository.countByProductId(p.getId()) / (double) totalTx;
+            int pageNumber = 0;
+            int pageSize = 1000;
+            Page<Product> page;
 
-                scores.put(p, 0.7 * sim + 0.3 * popularity);
-            }
+            // Paging + candidate filtering by category
+            do {
+                Pageable pageable = PageRequest.of(pageNumber, pageSize);
+                page = productRepository.findCandidatesByCategory(lastProduct.getCategory(),
+                        lastProduct.getId(), pageable);
+
+                for(Product p : page.getContent()){
+                    List<Double> f = objectMapper.readValue(p.getFeatures(),
+                            new TypeReference<List<Double>>(){});
+                    double sim = cosineSimilarity(lastFeatures, f);
+                    double popularity = transactionRepository.countByProductId(p.getId()) / (double) totalTx;
+                    scores.put(p, 0.7*sim + 0.3*popularity);
+                }
+
+                pageNumber++;
+            } while(!page.isLast());
 
             return scores.entrySet().stream()
                     .sorted(Map.Entry.<Product, Double>comparingByValue().reversed())
